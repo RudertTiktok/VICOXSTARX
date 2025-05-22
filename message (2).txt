@@ -1080,21 +1080,29 @@ AutoParryToggle:OnChanged(function(v)
             end
 
             if ball_properties.auto_spam then
-        return
-    end
-	
-	if ball_properties.is_curved then
-        return
-    end
+                return
+            end
+            
+            if ball_properties.is_curved then
+                return
+            end
 
-	if ball_properties.distance > ball_properties.parry_range and ball_properties.distance > parry_accuracity then
-        return
-    end
-	
-	if AutoParry.target.current and AutoParry.target.current ~= LocalPlayer.Character then
-        return
-    end
+            if ball_properties.distance > ball_properties.parry_range and ball_properties.distance > parry_accuracity then
+                return
+            end
+            
+            if AutoParry.target.current and AutoParry.target.current ~= LocalPlayer.Character then
+                return
+            end
 
+            -- Check cooldown before parrying
+            if ball_properties.cooldown then
+                return
+            end
+
+            -- Set cooldown immediately and update last_hit
+            ball_properties.cooldown = true
+            ball_properties.last_hit = tick()
             AutoParry.Parry()
 
             task.spawn(function()
