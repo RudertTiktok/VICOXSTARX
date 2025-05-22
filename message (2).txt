@@ -428,9 +428,9 @@ AutoParry.Get_Ball_Properties = function(self)
     return AutoParry.ball.properties
 end
 
-local old_from_target = nil
+local old_from_target = nil :: Model
 
-AutoParry.is_spam = function()
+AutoParry:is_spam(self)
 	local target = AutoParry.target.current
 
 	if not target then
