@@ -562,21 +562,24 @@ task.defer(function()
 end)
 
 function ManualSpam()
-    if ManualSpam then
-        ManualSpam:Destroy()
-        ManualSpam = nil
+
+    if MauaulSpam then
+        MauaulSpam:Destroy()
+        MauaulSpam = nil
         return
     end
 
-    ManualSpam = Instance.new("ScreenGui")
-    ManualSpam.Name = "ManualSpam"
-    ManualSpam.Parent = game:GetService("CoreGui") or game.Players.LocalPlayer:WaitForChild("PlayerGui")
-    ManualSpam.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    ManualSpam.ResetOnSpawn = false
+
+    MauaulSpam = Instance.new("ScreenGui")
+    MauaulSpam.Name = "MauaulSpam"
+    MauaulSpam.Parent = game:GetService("CoreGui") or game.Players.LocalPlayer:WaitForChild("PlayerGui")
+    MauaulSpam.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    MauaulSpam.ResetOnSpawn = false
+
 
     local Main = Instance.new("Frame")
     Main.Name = "Main"
-    Main.Parent = ManualSpam
+    Main.Parent = MauaulSpam
     Main.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     Main.BorderColor3 = Color3.fromRGB(0, 0, 0)
     Main.BorderSizePixel = 0
@@ -585,6 +588,7 @@ function ManualSpam()
 
     local UICorner = Instance.new("UICorner")
     UICorner.Parent = Main
+
 
     local IndercantorBlahblah = Instance.new("Frame")
     IndercantorBlahblah.Name = "IndercantorBlahblah"
@@ -601,6 +605,7 @@ function ManualSpam()
 
     local UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
     UIAspectRatioConstraint.Parent = IndercantorBlahblah
+
 
     local PC = Instance.new("TextLabel")
     PC.Name = "PC"
@@ -625,6 +630,7 @@ function ManualSpam()
     local UIAspectRatioConstraint_2 = Instance.new("UIAspectRatioConstraint")
     UIAspectRatioConstraint_2.Parent = PC
     UIAspectRatioConstraint_2.AspectRatio = 4.346
+
 
     local IndercanotTextBlah = Instance.new("TextButton")
     IndercanotTextBlah.Name = "IndercanotTextBlah"
@@ -664,6 +670,7 @@ function ManualSpam()
     UIAspectRatioConstraint_4.Parent = Main
     UIAspectRatioConstraint_4.AspectRatio = 1.667
 
+
     local spamConnection
     local toggleManualSpam = false
     local RunService = game:GetService("RunService")
@@ -684,10 +691,10 @@ function ManualSpam()
                         break
                     end
                     local success, err = pcall(function()
-                        AutoParry.Parry()
+                        Auto_Parry.Parry()
                     end)
                     if not success then
-                        warn("Error in AutoParry.Parry:", err)
+                        warn("Error in Auto_Parry.Parry:", err)
                     end
                     task.wait()
                 end
@@ -695,15 +702,16 @@ function ManualSpam()
         end
     end
 
+
     local button = IndercanotTextBlah
-    local UIGradient = button.UIGradient
+    local UIGredient = button.UIGradient
     local NeedToChange = IndercantorBlahblah
 
-    local green_Color = {
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 0, 128)),
-        ColorSequenceKeypoint.new(0.75, Color3.fromRGB(128, 0, 128)),
-        ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 128))
-    }
+local green_Color = {
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 0, 128)),
+    ColorSequenceKeypoint.new(0.75, Color3.fromRGB(128, 0, 128)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 128))
+}
 
     local red_Color = {
         ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 0, 0)),
@@ -735,7 +743,7 @@ function ManualSpam()
                 new_Color[i] = ColorSequenceKeypoint.new(current_Color[i].Time, start_Color:Lerp(end_Color, alpha))
             end
 
-            UIGradient.Color = ColorSequence.new(new_Color)
+            UIGredient.Color = ColorSequence.new(new_Color)
 
             if alpha >= 1 then
                 transition = false
@@ -764,6 +772,7 @@ function ManualSpam()
 
     button.MouseButton1Click:Connect(toggleColor)
 
+
     local keyConnection
     keyConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if gameProcessed then return end
@@ -772,7 +781,8 @@ function ManualSpam()
         end
     end)
 
-    ManualSpam.Destroying:Connect(function()
+
+    MauaulSpam.Destroying:Connect(function()
         if keyConnection then
             keyConnection:Disconnect()
         end
@@ -780,6 +790,7 @@ function ManualSpam()
             spamConnection:Disconnect()
         end
     end)
+
 
     local gui = Main
     local dragging
@@ -835,8 +846,10 @@ local ScreenGui = Instance.new("ScreenGui")
 local ImageButton = Instance.new("ImageButton")
 local UICorner = Instance.new("UICorner")
 
+
 ScreenGui.Parent = game.CoreGui
 ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
 
 ImageButton.Parent = ScreenGui
 ImageButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
@@ -846,7 +859,9 @@ ImageButton.Size = UDim2.new(0, 50, 0, 50)
 ImageButton.Image = "rbxassetid://105822895597231"
 ImageButton.Draggable = true
 
+
 UICorner.Parent = ImageButton
+
 
 ImageButton.MouseButton1Click:Connect(function()
     game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.LeftControl, false, game)
