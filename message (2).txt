@@ -239,13 +239,7 @@ for _, Args in pairs(Remotes) do
 end
 
 AutoParry.Parry = function()
-    local ball_properties = AutoParry.ball.properties
-    if ball_properties.cooldown and not ball_properties.auto_spam then
-        return
-    end
-
-    AutoParry.ball.properties.last_hit = tick()
-
+    print("Parry triggered at:", tick()) -- Debug
     local Parry_Data = AutoParry.Parry_Data()
     for Remote, Args in pairs(Remotes) do
         local Hash
@@ -256,10 +250,13 @@ AutoParry.Parry = function()
         end
         Remote:FireServer(Hash, Key, Parry_Data[1], Parry_Data[2], Parry_Data[3], Parry_Data[4])
     end
-    ball_properties.parries += 1
-    task.delay(0.25, function()
-        if ball_properties.parries > 0 then
-            ball_properties.parries -= 1
+    if Parries > 7 then
+        return false
+    end
+    Parries += 1
+    task.delay(0.5, function()
+        if Parries > 0 then
+            Parries -= 1
         end
     end)
 end
@@ -1002,6 +999,8 @@ Tabs.Home:AddParagraph({
 })
 
 local AutoParryToggle = Tabs.Main:AddToggle("AutoParry", {Title="Auto Parry/Spam", Default=true})
+kenapa parry nya 2x? padahal kan ada cooldown.
+
 AutoParryToggle:OnChanged(function(v)
     if v then
         ConnectionsManager["Auto Parry"] = RunService.PostSimulation:Connect(function()
@@ -1080,29 +1079,21 @@ AutoParryToggle:OnChanged(function(v)
             end
 
             if ball_properties.auto_spam then
-                return
-            end
-            
-            if ball_properties.is_curved then
-                return
-            end
+        return
+    end
+	
+	if ball_properties.is_curved then
+        return
+    end
 
-            if ball_properties.distance > ball_properties.parry_range and ball_properties.distance > parry_accuracity then
-                return
-            end
-            
-            if AutoParry.target.current and AutoParry.target.current ~= LocalPlayer.Character then
-                return
-            end
+	if ball_properties.distance > ball_properties.parry_range and ball_properties.distance > parry_accuracity then
+        return
+    end
+	
+	if AutoParry.target.current and AutoParry.target.current ~= LocalPlayer.Character then
+        return
+    end
 
-            -- Check cooldown before parrying
-            if ball_properties.cooldown then
-                return
-            end
-
-            -- Set cooldown immediately and update last_hit
-            ball_properties.cooldown = true
-            ball_properties.last_hit = tick()
             AutoParry.Parry()
 
             task.spawn(function()
@@ -1111,7 +1102,7 @@ AutoParryToggle:OnChanged(function(v)
                 until 
                     (tick() - ball_properties.last_hit) > 1 - (ping_threshold / 100)
 
-                ball_properties.cooldown = false
+                ball_properties.cooldown = true
             end)
         end)
     elseif ConnectionsManager["Auto Parry"] then
