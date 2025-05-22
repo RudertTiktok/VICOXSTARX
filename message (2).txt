@@ -72,10 +72,24 @@ local AutoParry = {
         },
         ball_entity = nil
     },
-    entity_properties = { distance = 0, velocity = Vector3.new(), direction = Vector3.new() },
+    entity_properties = { distance = 0, velocity = Vector3.new(), direction = Vector3.new(), server_position = Vector3.zero, is_moving = false, speed = 0, dot = 0 },
     Spam_Sensitivity = 50,
     Ping_Based_Spam = true,
     Parry_Type = "Default"
+}
+
+local Player = {
+    Entity = {
+        properties = {
+            ping = 1,
+            sword = "",
+            server_position = Vector3.zero,
+            velocity = Vector3.zero,
+            speed = 0,
+            is_moving = false,
+            grab_animation = nil
+        }
+    }
 }
 
 -- Remote scanning
@@ -353,6 +367,12 @@ AutoParry.Is_Curved = function()
     return false
 end
 
+local get_pointer = function()
+    local mousePos = UserInputService:GetMouseLocation()
+    local ray = Camera and Camera:ScreenPointToRay(mousePos.X, mousePos.Y) or { Direction = Vector3.new(0, 0, -1) }
+    return CFrame.new(Vector3.zero, ray.Direction)
+end
+
 local get_closest_entity = function()
     local closest = nil
     local max_distance = math.huge
@@ -403,6 +423,22 @@ Player.get_closest_player_to_cursor = function()
         end
     end
     return closest_player
+end
+
+
+local get_closest_entity = function()
+    local closest = nil
+    local max_distance = math.huge
+    for _, entity in Alive:GetChildren() do
+        if entity.Name ~= LocalPlayer.Name and entity:FindFirstChild("HumanoidRootPart") then
+            local distance = (LocalPlayer.Character and LocalPlayer.Character.PrimaryPart.Position - entity.HumanoidRootPart.Position).Magnitude
+            if distance < max_distance then
+                closest_Entity = entity
+                max_distance = distance
+            end
+        end
+    end
+    return closest_Entity
 end
 
 AutoParry.Closest_Player = function()
