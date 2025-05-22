@@ -60,6 +60,7 @@ local AutoParry = {
             spam_range = 0,
             parry_range = 0,
             auto_spam = false,
+            cooldown = false,
             last_warping = tick(),
             is_curved = false,
             hell_hook_completed = true,
@@ -238,6 +239,13 @@ for _, Args in pairs(Remotes) do
 end
 
 AutoParry.Parry = function()
+    local ball_properties = AutoParry.ball.properties
+    if ball_properties.cooldown and not ball_properties.auto_spam then
+        return
+    end
+
+    AutoParry.ball.properties.last_hit = tick()
+
     local Parry_Data = AutoParry.Parry_Data()
     for Remote, Args in pairs(Remotes) do
         local Hash
@@ -248,11 +256,8 @@ AutoParry.Parry = function()
         end
         Remote:FireServer(Hash, Key, Parry_Data[1], Parry_Data[2], Parry_Data[3], Parry_Data[4])
     end
-    if Parries > 7 then
-        return false
-    end
     Parries += 1
-    task.delay(0.5, function()
+    task.delay(0.25, function()
         if Parries > 0 then
             Parries -= 1
         end
