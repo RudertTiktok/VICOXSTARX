@@ -35,7 +35,7 @@ local spectate_Enabled = false
 local manualSpamSpeed = 10
 local pingBased = true
 local TargetSelectionMethod = ""
--- setfpscap(60) -- Commented out to avoid potential errors
+setfpscap(60)
 
 local Settings = {
     AutoParryEnabled = true,
@@ -245,6 +245,7 @@ AutoParry.Parry = function()
     end
 
     AutoParry.ball.properties.last_hit = tick()
+    ball_properties.parries += 1
 
     local Parry_Data = AutoParry.Parry_Data()
     for Remote, Args in pairs(Remotes) do
@@ -256,10 +257,10 @@ AutoParry.Parry = function()
         end
         Remote:FireServer(Hash, Key, Parry_Data[1], Parry_Data[2], Parry_Data[3], Parry_Data[4])
     end
-    Parries += 1
+
     task.delay(0.25, function()
-        if Parries > 0 then
-            Parries -= 1
+        if ball_properties.parries > 0 then
+            ball_properties.parries -= 1
         end
     end)
 end
@@ -1080,21 +1081,29 @@ AutoParryToggle:OnChanged(function(v)
             end
 
             if ball_properties.auto_spam then
-        return
-    end
-	
-	if ball_properties.is_curved then
-        return
-    end
+                return
+            end
+            
+            if ball_properties.is_curved then
+                return
+            end
 
-	if ball_properties.distance > ball_properties.parry_range and ball_properties.distance > parry_accuracity then
-        return
-    end
-	
-	if AutoParry.target.current and AutoParry.target.current ~= LocalPlayer.Character then
-        return
-    end
+            if ball_properties.distance > ball_properties.parry_range and ball_properties.distance > parry_accuracity then
+                return
+            end
+            
+            if AutoParry.target.current and AutoParry.target.current ~= LocalPlayer.Character then
+                return
+            end
 
+            -- Check cooldown before parrying
+            if ball_properties.cooldown then
+                return
+            end
+
+            -- Set cooldown immediately and update last_hit
+            ball_properties.cooldown = true
+            ball_properties.last_hit = tick()
             AutoParry.Parry()
 
             task.spawn(function()
