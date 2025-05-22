@@ -999,8 +999,6 @@ Tabs.Home:AddParagraph({
 })
 
 local AutoParryToggle = Tabs.Main:AddToggle("AutoParry", {Title="Auto Parry/Spam", Default=true})
-kenapa parry nya 2x? padahal kan ada cooldown.
-
 AutoParryToggle:OnChanged(function(v)
     if v then
         ConnectionsManager["Auto Parry"] = RunService.PostSimulation:Connect(function()
