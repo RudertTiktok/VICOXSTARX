@@ -691,7 +691,7 @@ function ManualSpam()
                         break
                     end
                     local success, err = pcall(function()
-                        Auto_Parry.Parry()
+                        AutoParry.Parry()
                     end)
                     if not success then
                         warn("Error in Auto_Parry.Parry:", err)
@@ -891,12 +891,12 @@ Window:SelectTab(1)
 
 local Section = Tabs.Home:AddSection("Info")
 Tabs.Home:AddButton({
-    Title = "Copy..?",
+    Title = "Copy Me",
     Description = "Copy Into Your Clipboard",
     Callback = function()
-        setclipboard('nothing')
+        setclipboard('GoodBoy..')
         Fluent:Notify({
-            Title = "No Have Sadly",
+            Title = "Skill issue 100%",
             Content = "if you femboy kill your self",
             SubContent = "",
             Duration = 10
@@ -906,7 +906,7 @@ Tabs.Home:AddButton({
 
 local Section = Tabs.Home:AddSection("Credits")
 Tabs.Home:AddParagraph({
-    Title = "CodeE4X, Rudert, Flesspe",
+    Title = "CodeE4X(Owner), Rudert(Owner), Flesspe(Co Owner)",
     Content = "the trio of the King On bladeball",
 })
 
@@ -935,7 +935,7 @@ Tabs.Home:AddParagraph({
     Content = "-Mobile Tester",
 })
 
-local AutoParryToggle = Tabs.Main:AddToggle("AutoParry", {Title="Auto Parry", Default=true})
+local AutoParryToggle = Tabs.Main:AddToggle("AutoParry", {Title="Auto Parry/Spam", Default=true})
 AutoParryToggle:OnChanged(function(v)
     if v then
         ConnectionsManager["Auto Parry"] = RunService.PostSimulation:Connect(function()
@@ -1049,7 +1049,7 @@ end)
 ManualSpam()
 local Toggle = Tabs.Main:AddToggle("MyToggle", {
     Title = "Manual Spam",
-    Description = "Backup For Auto Spam - i do not recommend it bcs high ping",
+    Description = "Backup For Auto Spam - i recommend it because using Remotes.",
     Default = false,
     Callback = function()
         ManualSpam()
