@@ -194,92 +194,98 @@ local Last_Warping = tick();
 Auto_Parry.Linear_Interpolation = function(a, b, time_volume)
 	return a + ((b - a) * time_volume);
 end;
-local Previous_Velocity = {};
-local Curving = tick();
+
 Auto_Parry.Is_Curved = function()
     local Ball = Auto_Parry.Get_Ball();
     if not Ball then
         return false;
     end
-    local Zoomies = Ball:FindFirstChild("zoomies");
-    if not Zoomies then
-        return false;
-    end
-
-    local Velocity = Zoomies.VectorVelocity;
-    local Ball_Direction = Velocity.Unit;
-    local Direction = (LocalPlayer.Character.PrimaryPart.Position - Ball.Position).Unit;
-    local Dot = Direction:Dot(Ball_Direction);
-    local Speed = Velocity.Magnitude;
-    local Distance = (LocalPlayer.Character.PrimaryPart.Position - Ball.Position).Magnitude;
-
-    if not pingBased then
-        if Speed < 100 then return false end
-        if Dot < 0.8 then return true end
-        if Distance > 100 then return false end
+    local target = AutoParry.target.current
+    if not target then
         return false
     end
 
-    local Ping = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue();
-    local Speed_Threshold = math.min(Speed / 100, 40);
-    local Angle_Threshold = 40 * math.max(Dot, 0);
-    local Direction_Difference = (Ball_Direction - Velocity).Unit;
-    local Direction_Similarity = Direction:Dot(Direction_Difference);
-    local Dot_Difference = Dot - Direction_Similarity;
-    local Dot_Threshold = 0.5 - (Ping / 975);
-    local Reach_Time = (Distance / Speed) - (Ping / 1000);
-    local Enough_Speed = Speed > 100;
-    local Ball_Distance_Threshold = ((math.max(Ping/10,15) - math.min(Distance / 1000, 15)) + Angle_Threshold + Speed_Threshold)*(1+Ping/925)
+    local ball_properties = AutoParry.ball.properties
+    local current_target = target.Name
 
-    table.insert(Previous_Velocity, Velocity);
-    if (#Previous_Velocity > 4) then
-        table.remove(Previous_Velocity, 1);
+    if target.PrimaryPart:FindFirstChild('MaxShield') and current_target ~= LocalPlayer.Name and ball_properties.distance < 50 then
+        return false
     end
 
-    if (Enough_Speed and (Reach_Time > (Ping / 10))) then
-        Ball_Distance_Threshold = math.max(Ball_Distance_Threshold - 15, 15);
-    end
+    if AutoParry.ball.ball_entity then
+        if AutoParry.ball.ball_entity:FindFirstChild('TimeHole1') and current_target ~= LocalPlayer.Name and ball_properties.distance < 100 then
+            ball_properties.auto_spam = false
+            return false
+        end
 
-    if (Distance < Ball_Distance_Threshold) then
-        return false;
-    end
+        if AutoParry.ball.ball_entity:FindFirstChild('WEMAZOOKIEGO') and current_target ~= LocalPlayer.Name and ball_properties.distance < 100 then
+            return false
+        end
 
-    if ((tick() - Curving) < (Reach_Time / 1.5)) then
-        return true;
-    end
+        if AutoParry.ball.ball_entity:FindFirstChild('At2') and ball_properties.speed <= 0 then
+            return true
+        end
 
-    if (Dot_Difference < Dot_Threshold) then
-        return true;
-    end
-
-    local Radians = math.rad(math.asin(Dot));
-    Lerp_Radians = Auto_Parry.Linear_Interpolation(Lerp_Radians, Radians, 0.8);
-    if (Lerp_Radians < 0.018) then
-        Last_Warping = tick();
-    end
-
-    if ((tick() - Last_Warping) < (Reach_Time / 1.5)) then
-        return true;
-    end
-
-    if (#Previous_Velocity == 4) then
-        local Intended_Direction_Difference = (Ball_Direction - Previous_Velocity[1].Unit).Unit;
-        local Intended_Dot = Direction:Dot(Intended_Direction_Difference);
-        local Intended_Dot_Difference = Dot - Intended_Dot;
-        local Intended_Direction_Difference2 = (Ball_Direction - Previous_Velocity[2].Unit).Unit;
-        local Intended_Dot2 = Direction:Dot(Intended_Direction_Difference2);
-        local Intended_Dot_Difference2 = Dot - Intended_Dot2;
-
-        if ((Intended_Dot_Difference < Dot_Threshold) or (Intended_Dot_Difference2 < Dot_Threshold)) then
-            return true;
+        if AutoParry.ball.ball_entity:FindFirstChild('AeroDynamicSlashVFX') then
+            Debris:AddItem(AutoParry.ball.ball_entity.AeroDynamicSlashVFX, 0)
+            ball_properties.auto_spam = false
+            ball_properties.aero_dynamic_time = tick()
         end
     end
 
-    if ((tick() - Last_Warping) < (Reach_Time / 1.5)) then
-        return true;
+    if RunTime:FindFirstChild('Tornado') then
+        if ball_properties.distance > 5 and (tick() - ball_properties.aero_dynamic_time) < (RunTime.Tornado:GetAttribute("TornadoTime") or 1) + 0.314159 then
+            return true
+        end
     end
-	return Dot < Dot_Threshold;
-end;
+
+    if not ball_properties.hell_hook_completed and target.Name == LocalPlayer.Name and ball_properties.distance > 5 - math.random() then
+        return true
+    end
+    
+    local ball_direction = ball_properties.velocity.Unit
+    local ball_speed = ball_properties.speed
+    
+    local speed_threshold = math.min(ball_speed / 100, 40)
+    local angle_threshold = 40 * math.max(ball_properties.dot, 0)
+
+    local player_ping = Player.Entity.properties.ping
+
+    local accurate_direction = ball_properties.velocity.Unit * ball_direction
+    local direction_difference = (accurate_direction - ball_properties.velocity).Unit
+    local accurate_dot = ball_properties.direction:Dot(direction_difference)
+    local dot_difference = ball_properties.dot - accurate_dot
+    local dot_threshold = 0.5 - player_ping / 1000
+
+    local reach_time = ball_properties.distance / ball_properties.maximum_speed - (player_ping / 1000)
+    local enough_speed = ball_properties.maximum_speed > 100
+
+    local ball_distance_threshold = 15 - math.min(ball_properties.distance / 1000, 15) + angle_threshold + speed_threshold
+    
+    if enough_speed and reach_time > player_ping / 10 then
+        ball_distance_threshold = math.max(ball_distance_threshold - 15, 15)
+    end
+    
+    if ball_properties.distance < ball_distance_threshold then
+        return false
+    end
+
+    if dot_difference < dot_threshold or ball_properties.dot < dot_threshold then
+        return true
+    end
+
+    if ball_properties.lerp_radians < 0.018 then
+        ball_properties.last_curve_position = ball_properties.position
+        ball_properties.last_warping = tick() 
+    end
+
+    if (tick() - ball_properties.last_warping) < (reach_time / 1.5) then
+        return true
+    end
+
+    return false
+end
+
 Auto_Parry.Closest_Player = function()
 	local Max_Distance = math.huge;
 	Closest_Entity = nil;
@@ -319,39 +325,117 @@ Auto_Parry.Get_Ball_Properties = function(self)
 	local ballDot = ballDirection:Dot(ballVelocity.Unit);
 	return {Velocity=ballVelocity,Direction=ballDirection,Distance=ballDistance,Dot=ballDot};
 end;
+
+local old_from_target = nil
+
 Auto_Parry.Spam_Service = function(self)
 	local ball = Auto_Parry.Get_Ball();
 	if not ball then
 		return false;
 	end
-	Auto_Parry.Closest_Player();
-	local spamDelay = 0;
-	local spamAccuracy = 100;
-	if not self.Spam_Sensitivity then
-		self.Spam_Sensitivity = 50;
+        	local target = AutoParry.target.current
+
+	if not target then
+		return false
 	end
-	if not self.Ping_Based_Spam then
-		self.Ping_Based_Spam = false;
+
+	if AutoParry.target.from ~= LocalPlayer.Character then
+		old_from_target = AutoParry.target.from
 	end
-	local velocity = ball.AssemblyLinearVelocity;
-	local speed = velocity.Magnitude;
-	local direction = (LocalPlayer.Character.PrimaryPart.Position - ball.Position).Unit;
-	local dot = direction:Dot(velocity.Unit);
-	local targetPosition = Closest_Entity.PrimaryPart.Position;
-	local targetDistance = LocalPlayer:DistanceFromCharacter(targetPosition);
-	local maximumSpamDistance = self.Ping + math.min(speed / 6.5, 95);
-	maximumSpamDistance = maximumSpamDistance * self.Spam_Sensitivity;
-	if self.Ping_Based_Spam then
-		maximumSpamDistance = maximumSpamDistance + self.Ping;
+
+	if self.parries < 3 and AutoParry.target.from == old_from_target then
+		return false
 	end
-	if ((self.Entity_Properties.Distance > maximumSpamDistance) or (self.Ball_Properties.Distance > maximumSpamDistance) or (targetDistance > maximumSpamDistance)) then
-		return spamAccuracy;
+
+	local player_ping = Player.Entity.properties.ping
+	local distance_threshold = 18 + (player_ping / 80)
+
+	local ball_properties = AutoParry.ball.properties
+	local reach_time = ball_properties.distance / ball_properties.maximum_speed - (player_ping / 1000)
+
+	if (tick() - self.last_hit) > 0.8 and self.entity_distance > distance_threshold and self.parries < 3 then
+		self.parries = 1
+
+		return false
 	end
-	local maximumSpeed = 5 - math.min(speed / 5, 5);
-	local maximumDot = math.clamp(dot, -1, 0) * maximumSpeed;
-	spamAccuracy = maximumSpamDistance - maximumDot;
-	task.wait(spamDelay);
-	return spamAccuracy;
+
+ 	if ball_properties.lerp_radians > 0.028 then
+		if self.parries > 3 then
+			self.parries = 1
+		end
+
+		return false
+	end
+
+	if (tick() - ball_properties.last_warping) < (reach_time / 1.3) and self.entity_distance > distance_threshold and self.parries < 4 then
+		if self.parries > 3 then
+			self.parries = 1
+		end
+
+		return false
+	end
+
+	if math.abs(self.speed - self.old_speed) < 5.2 and self.entity_distance > distance_threshold and self.speed < 60 and self.parries < 3 then
+		if self.parries > 3 then
+			self.parries = 0
+		end
+
+		return false
+	end
+	
+	if self.speed < 10 then
+		self.parries = 1
+
+		return false
+	end
+
+	if self.maximum_speed < self.speed and self.entity_distance > distance_threshold then
+		self.parries = 1
+		
+		return false
+	end
+
+	if self.entity_distance > self.range and self.entity_distance > distance_threshold then
+		if self.parries > 2 then
+			self.parries = 1
+		end
+
+		return false
+	end
+
+	if self.ball_distance > self.range and self.entity_distance > distance_threshold then
+		if self.parries > 2 then
+			self.parries = 2
+		end
+
+		return false
+	end
+
+	if self.last_position_distance > self.spam_accuracy and self.entity_distance > distance_threshold then
+		if self.parries > 4 then
+			self.parries = 2
+		end
+
+		return false
+	end
+
+	if self.ball_distance > self.spam_accuracy and self.ball_distance > distance_threshold then
+		if self.parries > 3 then
+			self.parries = 2
+		end
+
+		return false
+	end
+
+	if self.entity_distance > self.spam_accuracy and self.entity_distance > (distance_threshold - math.pi) then
+		if self.parries > 3 then
+			self.parries = 2
+		end
+
+		return false
+	end
+
+    return true	
 end;
 
 local visualizerEnabled = false
@@ -805,135 +889,107 @@ local AutoParry = Tabs.Main:AddToggle("AutoParry", {Title="Auto Parry",Default=t
 AutoParry:OnChanged(function(v)
 	if v then
 
-		Connections_Manager["Auto Parry"] = RunService.PreSimulation:Connect(function()
-			local One_Ball = Auto_Parry.Get_Ball();
-			local Balls = Auto_Parry.Get_Balls();
-			if (not Balls or (#Balls == 0)) then
-				return;
-			end
-			for _, Ball in pairs(Balls) do
-				if not Ball then
-					return;
-				end
-				local Zoomies = Ball:FindFirstChild("zoomies");
-				if not Zoomies then
-					return;
-				end
-				Ball:GetAttributeChangedSignal("target"):Once(function()
-					Parried = false;
-				end);
-				if Parried then
-					return;
-				end
-				local Ball_Target = Ball:GetAttribute("target");
-				local One_Target = One_Ball and One_Ball:GetAttribute("target");
-				local Velocity = Zoomies.VectorVelocity;
-				local character = LocalPlayer.Character;
-				if (not character or not character.PrimaryPart) then
-					return;
-				end
-				local Distance = (character.PrimaryPart.Position - Ball.Position).Magnitude;
-				local Speed = Velocity.Magnitude;
-				local Ping = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue() / 10;
-				local Parry_Accuracy = (Speed / 3.25) + Ping;
-				local Curved = Auto_Parry.Is_Curved();
-				if ((Ball_Target == tostring(LocalPlayer)) and Aerodynamic) then
-					local Elapsed_Tornado = tick() - Aerodynamic_Time;
-					if (Elapsed_Tornado > 0.6) then
-						Aerodynamic_Time = tick();
-						Aerodynamic = false;
-					end
-					return;
-				end
-				if ((One_Target == tostring(LocalPlayer)) and Curved) then
-					return;
-				end
-				if ((Ball_Target == tostring(LocalPlayer)) and (Distance <= Parry_Accuracy)) then
-					Auto_Parry.Parry();
-					Parried = true;
-				end
-				local Last_Parrys = tick();
-				while (tick() - Last_Parrys) < 1 do
-					if not Parried then
-						break;
-					end
-					task.wait();
-				end
-				Parried = false;
-			end
-		end);
+ConnectionsManager["Auto Parry"] = RunService.PostSimulation:Connect(function()
+    if not Settings.AutoParryEnabled then
+        AutoParry.reset()
+        return
+    end
+
+    local Character = LocalPlayer.Character
+    if not Character or Character.Parent == Dead or not Character:FindFirstChild("HumanoidRootPart") or not Character:FindFirstChild("Humanoid") or Character.Humanoid.Health <= 0 then
+        AutoParry.reset()
+        return
+    end
+
+    if not AutoParry.ball.ball_entity then
+        return
+    end
+
+    local ball_properties = AutoParry.ball.properties
+    ball_properties.is_curved = AutoParry.is_curved()
+    
+    local ping_threshold = math.clamp(Player.Entity.properties.ping / 10, 10, 20)
+	local spam_accuracity = ball_properties.maximum_speed / 7 + ping_threshold
+	local parry_accuracity = ball_properties.maximum_speed / 11.5 + ping_threshold
+
+	ball_properties.spam_range = ping_threshold + ball_properties.speed / 2.3
+    ball_properties.parry_range = ping_threshold + ball_properties.speed / math.pi
+
+    if Player.Entity.properties.sword == 'Titan Blade' then
+        ball_properties.parry_range += 11
+        ball_properties.spam_range += 2
+    end
+
+    local distance_to_last_position = LocalPlayer:DistanceFromCharacter(ball_properties.last_position)
+
+    if Settings.AutoSpamEnabled and AutoParry.target.current then
+        ball_properties.auto_spam = AutoParry.is_spam({
+            speed = ball_properties.speed,
+            spam_accuracy = spam_accuracity,
+            parries = ball_properties.parries,
+            ball_speed = ball_properties.speed,
+            range = ball_properties.spam_range / (3.15 - ping_threshold / 10),
+            last_hit = ball_properties.last_hit,
+            ball_distance = ball_properties.distance,
+            maximum_speed = ball_properties.maximum_speed,
+            old_speed = ball_properties.old_speed,
+            entity_distance = AutoParry.entity_properties.distance,
+            last_position_distance = distance_to_last_position
+        })
+    end
+
+    if ball_properties.auto_spam then
+        return
+    end
+
+    if AutoParry.target.current and AutoParry.target.current.Name == LocalPlayer.Name and Settings.AutoSpamEnabled then
+        ball_properties.auto_spam = AutoParry.is_spam({
+            speed = ball_properties.speed,
+            spam_accuracy = spam_accuracity,
+            parries = ball_properties.parries,
+            ball_speed = ball_properties.speed,
+            range = ball_properties.spam_range,
+            last_hit = ball_properties.last_hit,
+            ball_distance = ball_properties.distance,
+            maximum_speed = ball_properties.maximum_speed,
+            old_speed = ball_properties.old_speed,
+            entity_distance = AutoParry.entity_properties.distance,
+            last_position_distance = distance_to_last_position
+        })
+    end
+
+	if ball_properties.auto_spam then
+        return
+    end
+	
+	if ball_properties.is_curved then
+        return
+    end
+
+	if ball_properties.distance > ball_properties.parry_range and ball_properties.distance > parry_accuracity then
+        return
+    end
+	
+	if AutoParry.target.current and AutoParry.target.current ~= LocalPlayer.Character then
+        return
+    end
+
+	Auto_Parry.Parry();
+
+	task.spawn(function()
+		repeat
+			RunService.PreSimulation:Wait(0)
+		until 
+			(tick() - ball_properties.last_hit) > 1 - (ping_threshold / 100)
+
+		ball_properties.cooldown = false
+	end)
+end);
 	elseif Connections_Manager["Auto Parry"] then
 		Connections_Manager["Auto Parry"]:Disconnect();
 		Connections_Manager["Auto Parry"] = nil;
 	end
 end);
-local AutoSpam = Tabs.Main:AddToggle("AutoSpam", {Title="Auto Spam",Default=true});
-local autoSpamCoroutine = nil;
-local targetPlayer = nil;
-AutoSpam:OnChanged(function(v)
-	if v then
-		if autoSpamCoroutine then
-			coroutine.resume(autoSpamCoroutine, "stop")
-			autoSpamCoroutine = nil
-		end
-
-		autoSpamCoroutine = coroutine.create(function(signal)
-			while AutoSpam.Value and (signal ~= "stop") do
-				local ball = Auto_Parry.Get_Ball()
-				if ball and ball:IsDescendantOf(workspace) then
-					local zoomies = ball:FindFirstChild("zoomies")
-					if zoomies then
-						Auto_Parry.Closest_Player()
-						targetPlayer = Closest_Entity
-
-						if targetPlayer and targetPlayer.PrimaryPart and targetPlayer:IsDescendantOf(workspace) then
-							local playerDistance = LocalPlayer:DistanceFromCharacter(ball.Position)
-							local targetPosition = targetPlayer.PrimaryPart.Position
-							local targetDistance = LocalPlayer:DistanceFromCharacter(targetPosition)
-
-							if targetPlayer.Parent then
-								if ball:IsDescendantOf(workspace) and (ball.Position.Magnitude >= 1) then
-									local ballVelocity = ball.Velocity.Magnitude
-									local ballSpeed = math.max(ballVelocity, 0)
-									local ping = game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue()
-									local pingThreshold = math.clamp(ping / 10, 10, 16)
-									local ballProperties = Auto_Parry:Get_Ball_Properties()
-									local entityProperties = Auto_Parry:Get_Entity_Properties()
-
-									local spamAccuracy = Auto_Parry.Spam_Service({
-										Ball_Properties = ballProperties,
-										Entity_Properties = entityProperties,
-										Ping = pingThreshold,
-										Spam_Sensitivity = Auto_Parry.Spam_Sensitivity,
-										Ping_Based_Spam = Auto_Parry.Ping_Based_Spam
-									})
-
-									if (zoomies.Parent == ball) and ((playerDistance <= 30) or (targetDistance <= 30)) and (Parries > 1) then
-										Auto_Parry.Parry()
-									end
-								else
-									local waitTime = 0
-									repeat
-										task.wait(0.1)
-										waitTime = waitTime + 0.1
-										ball = Auto_Parry.Get_Ball()
-									until (ball and ball:IsDescendantOf(workspace) and (ball.Position.Magnitude > 1)) or (waitTime >= 2.5)
-								end
-							end
-						end
-					end
-				end
-				task.wait(0.001)
-			end
-		end)
-
-		coroutine.resume(autoSpamCoroutine)
-	elseif autoSpamCoroutine then
-		coroutine.resume(autoSpamCoroutine, "stop")
-		autoSpamCoroutine = nil
-	end
-end);
-
 
 ManualSpam()
 local Toggle = Tabs.Main:AddToggle("MyToggle",
