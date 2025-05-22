@@ -81,7 +81,7 @@ local AutoParry = {
 local Player = {
     Entity = {
         properties = {
-            ping = 1,
+            ping = 0,
             sword = "",
             server_position = Vector3.zero,
             velocity = Vector3.zero,
@@ -114,16 +114,6 @@ task.spawn(function()
 end)
 
 local Key = Parry_Key
-
--- Connections management
-local ConnectionsManager = {}
-function ConnectionsManager.disconnect(key)
-    local connection = ConnectionsManager[key]
-    if connection then
-        connection:Disconnect()
-        ConnectionsManager[key] = nil
-    end
-end
 
 AutoParry.Parry_Animation = function()
     local Parry_Animation = ReplicatedStorage.Shared.SwordAPI.Collection.Default:FindFirstChild("GrabParry")
@@ -512,7 +502,7 @@ end
 
 local old_from_target = nil
 
-AutoParry.is_spam = function(self)
+AutoParry.is_spam = function()
 	local target = AutoParry.target.current
 
 	if not target then
@@ -1174,7 +1164,12 @@ AutoParryToggle:OnChanged(function(v)
         return
     end
 
-            AutoParry.Parry()
+            local success, err = pcall(function()
+                        AutoParry.Parry()
+                    end)
+                    if not success then
+                        warn("Error in Auto_Parry.Parry:", err)
+                    end
 
             task.spawn(function()
                 repeat
