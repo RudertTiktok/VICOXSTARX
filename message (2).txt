@@ -37,10 +37,9 @@ local pingBased = true
 local TargetSelectionMethod = ""
 -- setfpscap(60) -- Commented out to avoid potential errors
 
--- Initialize missing tables and variables
 local Settings = {
-    AutoParryEnabled = true,
-    AutoSpamEnabled = true
+    AutoParryEnabled = false,
+    AutoSpamEnabled = false
 }
 
 local AutoParry = {
