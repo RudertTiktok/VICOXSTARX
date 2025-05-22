@@ -44,9 +44,12 @@ local Settings = {
 }
 
 local AutoParry = {
-    target = { current = nil, from = nil },
+    target = { current = nil, from = nil, aim = nil },
     ball = {
         properties = {
+            aero_dynamic_time = tick(),
+            last_position = Vector3.zero,
+            rotation = Vector3.zero,
             distance = 0,
             speed = 0,
             velocity = Vector3.new(),
@@ -58,11 +61,13 @@ local AutoParry = {
             spam_range = 0,
             parry_range = 0,
             auto_spam = false,
+            last_warping = tick(),
             is_curved = false,
-            hell_hook_completed = false,
+            hell_hook_completed = true,
             last_curve_position = Vector3.new(),
             last_warping = 0,
             lerp_radians = 0,
+            radians = 0,
             old_speed = 0,
             position = Vector3.new()
         },
@@ -395,82 +400,112 @@ AutoParry.Get_Ball_Properties = function(self)
     return AutoParry.ball.properties
 end
 
+local old_from_target = nil
+
 AutoParry.is_spam = function(params)
-    local distance_threshold = 18 + (LocalPlayer:GetNetworkPing() * 1000 / 80)
-    local reach_time = params.ball_distance / params.maximum_speed - (LocalPlayer:GetNetworkPing())
+	local target = AutoParry.target.current
 
-    if (tick() - params.last_hit) > 0.8 and params.entity_distance > distance_threshold and params.parries < 3 then
-        params.parries = 1
-        return false
-    end
+	if not target then
+		return false
+	end
 
-    if params.lerp_radians > 0.028 then
-        if params.parries > 3 then
-            params.parries = 1
-        end
-        return false
-    end
+	if AutoParry.target.from ~= LocalPlayer.Character then
+		old_from_target = AutoParry.target.from
+	end
 
-    if (tick() - params.last_warping) < (reach_time / 1.3) and params.entity_distance > distance_threshold and params.parries < 4 then
-        if params.parries > 3 then
-            params.parries = 1
-        end
-        return false
-    end
+	if self.parries < 3 and AutoParry.target.from == old_from_target then
+		return false
+	end
 
-    if math.abs(params.speed - params.old_speed) < 5.2 and params.entity_distance > distance_threshold and params.speed < 60 and params.parries < 3 then
-        if params.parries > 3 then
-            params.parries = 0
-        end
-        return false
-    end
+	local player_ping = Player.Entity.properties.ping
+	local distance_threshold = 18 + (player_ping / 80)
 
-    if params.speed < 10 then
-        params.parries = 1
-        return false
-    end
+	local ball_properties = AutoParry.ball.properties
+	local reach_time = ball_properties.distance / ball_properties.maximum_speed - (player_ping / 1000)
 
-    if params.maximum_speed < params.speed and params.entity_distance > distance_threshold then
-        params.parries = 1
-        return false
-    end
+	if (tick() - self.last_hit) > 0.8 and self.entity_distance > distance_threshold and self.parries < 3 then
+		self.parries = 1
 
-    if params.entity_distance > params.range and params.entity_distance > distance_threshold then
-        if params.parries > 2 then
-            params.parries = 1
-        end
-        return false
-    end
+		return false
+	end
 
-    if params.ball_distance > params.range and params.entity_distance > distance_threshold then
-        if params.parries > 2 then
-            params.parries = 2
-        end
-        return false
-    end
+ 	if ball_properties.lerp_radians > 0.028 then
+		if self.parries > 3 then
+			self.parries = 1
+		end
 
-    if params.last_position_distance > params.spam_accuracy and params.entity_distance > distance_threshold then
-        if params.parries > 4 then
-            params.parries = 2
-        end
-        return false
-    end
+		return false
+	end
 
-    if params.ball_distance > params.spam_accuracy and params.ball_distance > distance_threshold then
-        if params.parries > 3 then
-            params.parries = 2
-        end
-        return false
-    end
+	if (tick() - ball_properties.last_warping) < (reach_time / 1.3) and self.entity_distance > distance_threshold and self.parries < 4 then
+		if self.parries > 3 then
+			self.parries = 1
+		end
 
-    if params.entity_distance > params.spam_accuracy and params.entity_distance > (distance_threshold - math.pi) then
-        if params.parries > 3 then
-            params.parries = 2
-        end
-        return false
-    end
+		return false
+	end
 
-    return true
+	if math.abs(self.speed - self.old_speed) < 5.2 and self.entity_distance > distance_threshold and self.speed < 60 and self.parries < 3 then
+		if self.parries > 3 then
+			self.parries = 0
+		end
+
+		return false
+	end
+	
+	if self.speed < 10 then
+		self.parries = 1
+
+		return false
+	end
+
+	if self.maximum_speed < self.speed and self.entity_distance > distance_threshold then
+		self.parries = 1
+		
+		return false
+	end
+
+	if self.entity_distance > self.range and self.entity_distance > distance_threshold then
+		if self.parries > 2 then
+			self.parries = 1
+		end
+
+		return false
+	end
+
+	if self.ball_distance > self.range and self.entity_distance > distance_threshold then
+		if self.parries > 2 then
+			self.parries = 2
+		end
+
+		return false
+	end
+
+	if self.last_position_distance > self.spam_accuracy and self.entity_distance > distance_threshold then
+		if self.parries > 4 then
+			self.parries = 2
+		end
+
+		return false
+	end
+
+	if self.ball_distance > self.spam_accuracy and self.ball_distance > distance_threshold then
+		if self.parries > 3 then
+			self.parries = 2
+		end
+
+		return false
+	end
+
+	if self.entity_distance > self.spam_accuracy and self.entity_distance > (distance_threshold - math.pi) then
+		if self.parries > 3 then
+			self.parries = 2
+		end
+
+		return false
+	end
+
+    return true	
 end
 
 AutoParry.reset = function()
