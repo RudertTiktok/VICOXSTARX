@@ -102,6 +102,16 @@ end)
 
 local Key = Parry_Key
 
+-- Connections management
+local ConnectionsManager = {}
+function ConnectionsManager.disconnect(key)
+    local connection = ConnectionsManager[key]
+    if connection then
+        connection:Disconnect()
+        ConnectionsManager[key] = nil
+    end
+end
+
 AutoParry.Parry_Animation = function()
     local Parry_Animation = ReplicatedStorage.Shared.SwordAPI.Collection.Default:FindFirstChild("GrabParry")
     local Current_Sword = LocalPlayer.Character:GetAttribute("CurrentlyEquippedSword")
@@ -342,6 +352,58 @@ AutoParry.Is_Curved = function()
     end
 
     return false
+end
+
+local get_closest_entity = function()
+    local closest = nil
+    local max_distance = math.huge
+    for _, entity in Alive:GetChildren() do
+        if entity.Name ~= LocalPlayer.Name and entity:FindFirstChild("HumanoidRootPart") then
+            local distance = (LocalPlayer.Character and LocalPlayer.Character.PrimaryPart.Position - entity.HumanoidRootPart.Position).Magnitude
+            if distance < max_distance then
+                closest_Entity = entity
+                max_distance = distance
+            end
+        end
+    end
+    return closest_Entity
+end
+
+-- Player Functions
+Player.get_aim_entity = function()
+    local closest_entity = nil
+    local minimal_dot_product = -math.huge
+    local camera_direction = Camera and Camera.CFrame.LookVector or Vector3.new(0, 0, -1)
+    for _, player in Alive:GetChildren() do
+        if not player or player.Name == LocalPlayer.Name or not player:FindFirstChild("HumanoidRootPart") then
+            continue
+        end
+        local entity_direction = (player.HumanoidRootPart.Position - (Camera and Camera.CFrame.Position or Vector3.zero)).Unit
+        local dot_product = camera_direction:Dot(entity_direction)
+        if dot_product > minimal_dot_product then
+            minimal_dot_product = dot_product
+            closest_entity = player
+        end
+    end
+    return closest_entity
+end
+
+Player.get_closest_player_to_cursor = function()
+    local closest_player = nil
+    local minimal_dot_product = -math.huge
+    local pointer = get_pointer()
+    for _, player in Alive:GetChildren() do
+        if player == LocalPlayer.Character or player.Parent ~= Alive or not player:FindFirstChild("PrimaryPart") then
+            continue
+        end
+        local player_direction = (player.PrimaryPart.Position - (Camera and Camera.CFrame.Position or Vector3.zero)).Unit
+        local dot_product = pointer.LookVector:Dot(player_direction)
+        if dot_product > minimal_dot_product then
+            minimal_dot_product = dot_product
+            closest_player = player
+        end
+    end
+    return closest_player
 end
 
 AutoParry.Closest_Player = function()
@@ -1062,20 +1124,20 @@ AutoParryToggle:OnChanged(function(v)
             end
 
             if ball_properties.auto_spam then
-                return
-            end
-            
-            if ball_properties.is_curved then
-                return
-            end
+        return
+    end
+	
+	if ball_properties.is_curved then
+        return
+    end
 
-            if ball_properties.distance > ball_properties.parry_range and ball_properties.distance > parry_accuracity then
-                return
-            end
-            
-            if AutoParry.target.current and AutoParry.target.current ~= LocalPlayer.Character then
-                return
-            end
+	if ball_properties.distance > ball_properties.parry_range and ball_properties.distance > parry_accuracity then
+        return
+    end
+	
+	if AutoParry.target.current and AutoParry.target.current ~= LocalPlayer.Character then
+        return
+    end
 
             AutoParry.Parry()
 
