@@ -40,7 +40,7 @@ local TargetSelectionMethod = ""
 -- Initialize missing tables and variables
 local Settings = {
     AutoParryEnabled = true,
-    AutoSpamEnabled = false
+    AutoSpamEnabled = true
 }
 
 local AutoParry = {
