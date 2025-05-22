@@ -55,7 +55,7 @@ local AutoParry = {
             velocity = Vector3.new(),
             direction = Vector3.new(),
             dot = 0,
-            maximum_speed = 100,
+            maximum_speed = 0,
             last_hit = 0,
             parries = 0,
             spam_range = 0,
@@ -156,6 +156,19 @@ AutoParry.Get_Ball = function()
             return instance
         end
     end
+end
+
+function AutoParry.reset()
+    local ball_properties = AutoParry.ball.properties
+    ball_properties.is_curved = false
+    ball_properties.auto_spam = false
+    ball_properties.cooldown = false
+    ball_properties.maximum_speed = 0
+    ball_properties.parries = 0
+    ball_properties.last_hit = 0
+    AutoParry.target.current = nil
+    AutoParry.target.from = nil
+    AutoParry.target.aim = nil
 end
 
 AutoParry.Parry_Data = function()
@@ -402,7 +415,7 @@ end
 
 local old_from_target = nil
 
-AutoParry.is_spam = function(params)
+AutoParry.is_spam = function(self)
 	local target = AutoParry.target.current
 
 	if not target then
